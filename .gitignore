@@ -1,0 +1,13 @@
+# Documents
+data/documents/
+
+# FAISS index
+data/index/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# VS Code
+.vscode/
