@@ -1,10 +1,9 @@
 from app.embeddings.embedding_service import EmbeddingService
-from app.vectorstore.faiss_store import FAISSStore
+from app.vectorstore.qdrant_store import QdrantStore
 
 embedding_service = EmbeddingService()
 
-store = FAISSStore()
-store.load()
+store = QdrantStore()
 
 question = input("Ask a question: ")
 

@@ -1,51 +1,70 @@
-# # from pathlib import Path
+from pathlib import Path
 
-# # from app.document_loader.pdf_loader import PDFLoader
-# # from app.chunking.chunker import Chunker
-# # from app.embeddings.embedding_service import EmbeddingService
+from app.document_loader.pdf_loader import PDFLoader
+from app.chunking.chunker import Chunker
+from app.embeddings.embedding_service import EmbeddingService
+from app.vectorstore.qdrant_store import QdrantStore
+from app.storage.document_store import DocumentStore
 
-# # documents = []
+print("=" * 60)
+print("RAG Pipeline - Document Indexing with Qdrant")
+print("=" * 60)
 
-# # # Load all PDFs
-# # for pdf_path in Path("data/documents").glob("*.pdf"):
-# #     print(f"Loading: {pdf_path}")
+# ====== Check Qdrant Connection ======
+store = QdrantStore()
+if not store.health_check():
+    print("❌ ERROR: Qdrant server not running!")
+    print("   Start Qdrant: docker run -p 6333:6333 qdrant/qdrant")
+    exit(1)
 
-# #     loader = PDFLoader(str(pdf_path))
-# #     docs = loader.load()
+print("✅ Connected to Qdrant")
 
-# #     documents.extend(docs)
+# ====== Load PDFs ======
+print("\n[1/5] Loading PDF documents...")
+documents = []
 
-# # print(f"\nTotal Documents: {len(documents)}")
+pdf_path = Path("data/documents")
+if not pdf_path.exists():
+    print(f"⚠️  No documents found in {pdf_path}")
+else:
+    for pdf_file in pdf_path.glob("*.pdf"):
+        print(f"  📄 Loading: {pdf_file.name}")
+        loader = PDFLoader(str(pdf_file))
+        docs = loader.load()
+        documents.extend(docs)
 
-# # # Chunking
-# # chunker = Chunker(chunk_size=300)
-# # chunks = chunker.split(documents)
+print(f"✅ Loaded {len(documents)} pages from PDF(s)")
 
-# # print(f"Total Chunks: {len(chunks)}")
+# ====== Chunking ======
+print("\n[2/5] Chunking documents...")
+chunker = Chunker(chunk_size=300)
+chunks = chunker.split(documents)
+print(f"✅ Created {len(chunks)} chunks")
 
-# # # -------------------------
-# # # Embeddings
-# # # -------------------------
+# ====== Generate Embeddings ======
+print("\n[3/5] Generating embeddings...")
+embedding_service = EmbeddingService()
+texts = [chunk.text for chunk in chunks]
+embeddings = embedding_service.embed(texts)
+print(f"✅ Generated {len(embeddings)} embeddings (dimension: {len(embeddings[0])})")
 
-# # embedding_service = EmbeddingService()
+# ====== Store in Qdrant ======
+print("\n[4/5] Storing embeddings in Qdrant...")
+store.create_collection()
+store.add(embeddings, chunks)
+collection_info = store.get_collection_info()
+print(f"✅ Collection Info: {collection_info}")
 
-# # # Extract text from each chunk
-# # texts = [chunk.text for chunk in chunks]
+# ====== Save Document Store ======
+print("\n[5/5] Saving document store...")
+doc_store = DocumentStore()
+for chunk in chunks:
+    doc_store.add_chunk(chunk)
+doc_store.save()
 
-# # # Convert text into vectors
-# # embeddings = embedding_service.embed(texts)
-
-# # print(f"Total Embeddings: {len(embeddings)}")
-# # print(f"Embedding Dimension: {len(embeddings[0])}")
-
-# # # Print first embedding (optional)
-# # print("\nFirst Embedding:")
-# # print(embeddings[0])
-
-
-
-
-
+print("\n" + "=" * 60)
+print("✅ Pipeline Complete! Ready for RAG queries.")
+print("=" * 60)
 
 
 # from pathlib import Path

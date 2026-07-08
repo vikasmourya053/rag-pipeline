@@ -39,7 +39,7 @@
 import pickle
 
 from app.embeddings.embedding_service import EmbeddingService
-from app.vectorstore.faiss_store import FAISSStore
+from app.vectorstore.qdrant_store import QdrantStore
 from app.llm.llm_service import LLMService
 
 # -------------------------
@@ -47,8 +47,9 @@ from app.llm.llm_service import LLMService
 # -------------------------
 embedding_service = EmbeddingService()
 
-store = FAISSStore()
-store.load()
+store = QdrantStore()
+# Note: Collections are automatically loaded from Qdrant server
+# No need to call load() like with FAISS
 
 llm = LLMService()
 
